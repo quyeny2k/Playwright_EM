@@ -2,13 +2,13 @@ import pytest
 from playwright.sync_api import Page, expect
 import time
 
-from tests.conftest import LOGINRETRIES, transformpos2canvas, EMHOST, transformpos2canvasincommissiondialog, handle_dialog
+from tests.conftest import LOGINRETRIES, transformpos2canvas, transformpos2canvasincommissiondialog, handle_dialog
 
 @pytest.mark.skip
 @pytest.mark.parametrize("username, password", (["admin", "Pass"],
                                              ["user", "pass"]))
-def test_login_bad_password(page, username, password):
-    page.goto(EMHOST)
+def test_login_bad_password(page, em_url, username, password):
+    page.goto(em_url)
     expect(page).to_have_title("Enlighted Manage")
 
     page.locator("#userNameTextBox").fill(username)
@@ -22,10 +22,10 @@ def test_login_bad_password(page, username, password):
 @pytest.mark.skip
 @pytest.mark.parametrize("username, password", (["admin", "Pass"],
                                              ["admin", "pass"]))
-def test_bad_login_attempt_warning(page: Page, username, password):
+def test_bad_login_attempt_warning(em_url, page: Page, username, password):
     global LOGINRETRIES
     print(LOGINRETRIES)
-    page.goto(EMHOST)
+    page.goto(em_url)
     expect(page).to_have_title("Enlighted Manage")
 
     page.locator("#userNameTextBox").fill(username)
@@ -35,17 +35,19 @@ def test_bad_login_attempt_warning(page: Page, username, password):
     LOGINRETRIES -= 1
 
 
-def test_EM_LicenseSupport_page(login):
+@pytest.mark.skip
+def test_EM_LicenseSupport_page(em_url, login):
     page = login
     print("Test EM License Support page")
-    expect(page).to_have_url(f"{EMHOST}/ems/licenseSupport/management.ems")
+    expect(page).to_have_url(f"{em_url}/ems/licenseSupport/management.ems")
     uuidtext = page.locator('#pricingDiv').inner_text()
     assert len(uuidtext.split(' : ')[1]) != 0
     expect(page.locator('#areacount')).to_contain_text("Area Count : 20")
     expect(page.locator('#sensorlicenseusage')).to_contain_text("Sensor License Usage* : 10 of 0")
 
 
-def test_EM_OrgNavigation(emfacilitiespage):
+
+def test_EM_OrgNavigation(em_url, emfacilitiespage):
     print("Test EM Organization navigation")
     page = emfacilitiespage
     time.sleep(2)

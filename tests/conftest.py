@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright, expect, Page
 #from tespopup import EMHOST
 
 LOGINRETRIES = 4
-EMHOST = "https://169.254.0.1"
+#EMHOST = "https://169.254.0.1"
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -13,10 +13,19 @@ def pytest_addoption(parser):
         default="https://169.254.0.1",
         help="URL of the test EM",
     )
+    parser.addoption(
+        "--emlogin",
+        action="store",
+        help="Provide valid username,password to login to EM.  For example: \"username,password\""
+    )
 
 @pytest.fixture(scope="session")
 def em_url(request):
     return request.config.getoption("--em-url")
+
+@pytest.fixture(scope="session")
+def emlogin(request):
+    return request.config.getoption("--emlogin")
 
 @pytest.fixture(scope="session")
 def browser():
@@ -39,21 +48,21 @@ def page(context):
     page.close()
 
 @pytest.fixture(scope="session")
-def login(page, em_url) -> Page:
-    global EMHOST
-    EMHOST = em_url
-    page.goto(EMHOST)
-    page.locator("#userNameTextBox").fill("admin")
-    page.locator("#passwordTextBox").fill("Pass@123")
+def login(page, em_url, emlogin) -> Page:
+    assert emlogin, "EM login is not provided.  Please use --login option to provide EM login"
+    emusername, empassword = emlogin.split(',')
+    page.goto(em_url)
+    page.locator("#userNameTextBox").fill(emusername)
+    page.locator("#passwordTextBox").fill(empassword)
     page.get_by_role("button", name="Sign in").click()
-    expect(page).to_have_url(f"{EMHOST}/ems/licenseSupport/management.ems")
+    expect(page).to_have_url(f"{em_url}/ems/licenseSupport/management.ems")
     expect(page.locator("#welcome")).to_contain_text("WELCOME admin")
     yield page
 
 @pytest.fixture(scope="session")
-def emfacilitiespage(login) -> Page:
+def emfacilitiespage(login, em_url) -> Page:
     page = login
-    page.goto(f"{EMHOST}/ems/facilities/home.ems?")
+    page.goto(f"{em_url}/ems/facilities/home.ems?")
 
     page.wait_for_load_state("networkidle")
     page.get_by_role("tab", name="Facilities").get_by_role("link").click()
